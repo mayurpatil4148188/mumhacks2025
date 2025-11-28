@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { studentNav } from "../../nav";
 
@@ -41,6 +40,7 @@ export default function StartAssessmentPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -106,6 +106,7 @@ export default function StartAssessmentPage() {
         throw new Error(message);
       }
       setSubmitted(true);
+      setShowSuccess(true);
     } catch (err: any) {
       setError(err.message || "Something went wrong.");
     }
@@ -114,12 +115,21 @@ export default function StartAssessmentPage() {
   const title = type === "BASELINE" ? "Baseline check-in" : "Follow-up check-in";
 
   useEffect(() => {
-    if (submitted) {
+    if (submitted && !showSuccess) {
       setRedirecting(true);
-      alert("Thanks for your answers! Taking you back to your dashboard.");
       router.push("/dashboard/student");
     }
-  }, [router, submitted]);
+  }, [router, showSuccess, submitted]);
+
+  useEffect(() => {
+    if (!showSuccess) return;
+    const timer = setTimeout(() => {
+      setShowSuccess(false);
+      setRedirecting(true);
+      router.push("/dashboard/student");
+    }, 1800);
+    return () => clearTimeout(timer);
+  }, [router, showSuccess]);
 
   return (
     <DashboardShell
@@ -167,6 +177,30 @@ export default function StartAssessmentPage() {
           Submit responses
         </Button>
       </div>
+      {showSuccess ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <Card className="w-full max-w-md space-y-4 p-6">
+            <div className="space-y-2">
+              <h2 className="text-lg font-semibold text-slate-900">Thanks for your answers!</h2>
+              <p className="text-sm text-slate-600">
+                Your responses have been saved. We will take you back to your dashboard now.
+              </p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowSuccess(false);
+                  setRedirecting(true);
+                  router.push("/dashboard/student");
+                }}
+              >
+                Go to dashboard
+              </Button>
+            </div>
+          </Card>
+        </div>
+      ) : null}
     </DashboardShell>
   );
 }

@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "next lint",
     "seed": "tsx scripts/seed.ts",
-    "seed:baseline": "tsx scripts/seed-baseline-questions.ts"
+    "seed:baseline": "tsx scripts/seed-baseline-questions.ts",
+    "flush:tests": "tsx scripts/flush-test-instances.ts"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.0.4",

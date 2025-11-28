@@ -73,9 +73,10 @@ export async function submitTest({
   if (!test) throw new Error("Test not found");
   if (test.studentId.toString() !== studentId) throw new Error("You cannot submit this assessment.");
   test.questions = test.questions.map((q) => {
-    const answer = answers.find((a) => a.questionId === q.questionId);
-    return { ...q.toObject(), answerValue: answer?.answerValue };
+    const answer = answers.find((a) => a.questionId === String(q.questionId));
+    return { ...q.toObject(), answerValue: answer?.answerValue ?? q.answerValue };
   });
+  test.markModified("questions");
 
   const score = await scoreTestResponses(test);
   const { alertLevel, domainFlags } = decideAlerts(score.domainScores);
