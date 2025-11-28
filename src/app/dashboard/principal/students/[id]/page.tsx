@@ -9,6 +9,7 @@ import { User } from "@/models/User";
 import { Alert, AIScoringResult } from "@/models/StudentTestInstance";
 import { RAGDocument } from "@/models/RAGDocument";
 import mongoose from "mongoose";
+import { PersonaChatBox } from "@/components/chat/persona-chat-box";
 
 export default async function StudentDetailPage({ params }: { params: { id: string } }) {
   const session = await getAuthSession();
@@ -92,6 +93,11 @@ export default async function StudentDetailPage({ params }: { params: { id: stri
           )}
         </Card>
       </div>
+      <PersonaChatBox
+        studentId={studentId.toString()}
+        studentName={user?.name || "Student"}
+        persona={personaText}
+      />
     </DashboardShell>
   );
 }
