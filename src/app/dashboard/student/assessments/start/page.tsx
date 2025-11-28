@@ -52,9 +52,39 @@ export default function StartAssessmentPage() {
   const [redirecting, setRedirecting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [checkingStatus, setCheckingStatus] = useState(true);
+
+  // Check baseline status before starting (only for baseline assessments)
+  useEffect(() => {
+    if (status === "loading" || type !== "BASELINE") {
+      setCheckingStatus(false);
+      return;
+    }
+    if (status === "unauthenticated") {
+      router.push(`/auth/login?callbackUrl=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+      return;
+    }
+
+    async function checkBaselineStatus() {
+      try {
+        const res = await fetch("/api/tests/status");
+        const data = await res.json();
+        if (data.baselineCompleted) {
+          // Baseline already completed, redirect to assessments page
+          router.push("/dashboard/student/assessments");
+          return;
+        }
+      } catch (err) {
+        // If check fails, continue with normal flow (API will handle the check)
+      } finally {
+        setCheckingStatus(false);
+      }
+    }
+    checkBaselineStatus();
+  }, [status, type, router]);
 
   useEffect(() => {
-    if (status === "loading") return;
+    if (status === "loading" || checkingStatus) return;
     if (status === "unauthenticated") {
       router.push(`/auth/login?callbackUrl=${encodeURIComponent(window.location.pathname + window.location.search)}`);
       return;
@@ -74,6 +104,11 @@ export default function StartAssessmentPage() {
         const data = await res.json().catch(() => ({}));
         if (!res.ok) {
           const message = (data as any).error || "Could not start assessment.";
+          // If baseline already completed, redirect to assessments page
+          if (type === "BASELINE" && message.includes("already completed")) {
+            router.push("/dashboard/student/assessments");
+            return;
+          }
           throw new Error(message);
         }
         setTestId(data.testInstanceId);
@@ -87,7 +122,7 @@ export default function StartAssessmentPage() {
     }
     load();
     return () => controller.abort();
-  }, [router, status, type]);
+  }, [router, status, type, checkingStatus]);
 
   async function submit() {
     if (!testId) {
@@ -204,8 +239,8 @@ export default function StartAssessmentPage() {
           <Card className="p-4 text-sm text-emerald-700">Redirecting to your dashboard…</Card>
         ) : null}
         <div className="space-y-4">
-          {isLoading ? <p className="text-sm text-slate-600">Loading questions…</p> : null}
-          {!isLoading && questions.length === 0 ? (
+          {(isLoading || checkingStatus) ? <p className="text-sm text-slate-600">Loading questions…</p> : null}
+          {!isLoading && !checkingStatus && questions.length === 0 ? (
             <p className="text-sm text-slate-600">No questions were loaded for this assessment.</p>
           ) : null}
           {!isLoading && currentQuestion ? (

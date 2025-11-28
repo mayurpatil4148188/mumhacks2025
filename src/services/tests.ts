@@ -137,6 +137,10 @@ export async function submitTest({
     });
   }
 
+  // Mark test as completed
+  test.status = "COMPLETED";
+  test.completedAt = new Date();
+
   // RAG indexing should not block submission; log and continue on failure.
   try {
     await upsertRAGDocument({
@@ -174,6 +178,9 @@ export async function submitTest({
   } catch (ragError) {
     console.warn("RAG indexing skipped:", (ragError as Error)?.message);
   }
+
+  // Save the test with completed status
+  await test.save();
 
   return { score, alertLevel, domainFlags };
 }

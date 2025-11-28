@@ -13,9 +13,10 @@ export function BaselineStatus() {
 
   useEffect(() => {
     let mounted = true;
-    async function load() {
+    
+    async function loadStatus() {
       try {
-        const res = await fetch("/api/tests/status");
+        const res = await fetch("/api/tests/status", { cache: "no-store" });
         const data = await res.json();
         if (!mounted) return;
         setBaselineCompleted(Boolean(data.baselineCompleted));
@@ -26,9 +27,21 @@ export function BaselineStatus() {
         if (mounted) setLoading(false);
       }
     }
-    load();
+    
+    loadStatus();
+    
+    // Refresh status when page becomes visible (e.g., user navigates back)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible" && mounted) {
+        loadStatus();
+      }
+    };
+    
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    
     return () => {
       mounted = false;
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, []);
 
