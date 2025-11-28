@@ -20,6 +20,21 @@ export async function indexRAGDocument(doc: {
   return RAGDocument.create({ ...doc, embedding });
 }
 
+export async function upsertRAGDocument({
+  filter,
+  doc,
+}: {
+  filter: { schoolId: string; studentId?: string | null; type: string };
+  doc: { sourceId?: string | null; text: string };
+}) {
+  const embedding = await embedText(doc.text);
+  return RAGDocument.findOneAndUpdate(
+    filter,
+    { ...filter, ...doc, embedding },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
+}
+
 export async function searchRAG({
   query,
   schoolId,

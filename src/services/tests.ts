@@ -5,7 +5,7 @@ import { StudentProfile } from "@/models/StudentProfile";
 import { StudentTestInstance, AIScoringResult, AIScoringResultDocument } from "@/models/StudentTestInstance";
 import { decideAlerts } from "@/services/alert-engine";
 import { Alert } from "@/models/StudentTestInstance";
-import { indexRAGDocument } from "@/rag";
+import { indexRAGDocument, upsertRAGDocument } from "@/rag";
 import { User } from "@/models/User";
 import { TestTemplate } from "@/models/TestTemplate";
 
@@ -75,9 +75,15 @@ export async function startTest({
 function buildPersonaText({
   score,
   studentId,
+  studentProfile,
+  user,
+  templateType,
 }: {
   score: AIScoringResultDocument;
   studentId: string;
+  studentProfile: any;
+  user: any;
+  templateType: "BASELINE" | "FOLLOWUP";
 }) {
   const sorted = [...score.domainScores].sort((a, b) => b.riskLevel - a.riskLevel);
   const topThree = sorted.slice(0, 3);
@@ -92,7 +98,8 @@ function buildPersonaText({
       : "Low";
 
   return [
-    `Student persona baseline | studentId: ${studentId}`,
+    `Student persona | latest=${templateType} | studentId: ${studentId}`,
+    `Name: ${user?.name || "N/A"} | Grade: ${studentProfile?.grade || "N/A"} | Section: ${studentProfile?.section || "N/A"} | Roll: ${studentProfile?.rollNumber || "N/A"}`,
     `Overall risk: ${overallRisk}`,
     `Top concerns: ${concerns || "None detected"}`,
     `Teacher summary: ${score.overallSummaryForTeacher || "N/A"}`,
@@ -130,27 +137,38 @@ export async function submitTest({
     });
   }
 
-  await indexRAGDocument({
-    schoolId: test.schoolId.toString(),
-    studentId: test.studentId.toString(),
-    type: "ASSESSMENT_SUMMARY",
-    sourceId: test._id.toString(),
-    text: score.overallSummaryForTeacher || "Assessment summary",
+  await upsertRAGDocument({
+    filter: {
+      schoolId: test.schoolId.toString(),
+      studentId: test.studentId.toString(),
+      type: "ASSESSMENT_SUMMARY",
+    },
+    doc: {
+      sourceId: test._id.toString(),
+      text: score.overallSummaryForTeacher || "Assessment summary",
+    },
   });
 
-  if (test.templateType === "BASELINE") {
-    const personaText = buildPersonaText({
-      score,
-      studentId: test.studentId.toString(),
-    });
-    await indexRAGDocument({
+  const studentProfile = await StudentProfile.findOne({ userId: test.studentId, schoolId: test.schoolId });
+  const user = await User.findById(test.studentId);
+  const personaText = buildPersonaText({
+    score,
+    studentId: test.studentId.toString(),
+    studentProfile,
+    user,
+    templateType: test.templateType,
+  });
+  await upsertRAGDocument({
+    filter: {
       schoolId: test.schoolId.toString(),
       studentId: test.studentId.toString(),
       type: "STUDENT_PERSONA",
+    },
+    doc: {
       sourceId: test._id.toString(),
       text: personaText,
-    });
-  }
+    },
+  });
 
   return { score, alertLevel, domainFlags };
 }
