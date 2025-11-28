@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { SignOutButton } from "./sign-out-button";
 
 interface NavItem {
   label: string;
@@ -38,6 +39,9 @@ export function DashboardShell({
             </Link>
           ))}
         </nav>
+        <div className="mt-6 border-t border-slate-200 pt-4">
+          <SignOutButton />
+        </div>
       </aside>
       <main className="flex-1 space-y-6 p-6">
         <div className="space-y-1">
