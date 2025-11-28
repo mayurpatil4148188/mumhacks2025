@@ -10,6 +10,10 @@ export function BaselineStatus() {
   const [loading, setLoading] = useState(true);
   const [baselineCompleted, setBaselineCompleted] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
+  const [counts, setCounts] = useState<{ baselineCompleted: number; followupCompleted: number }>({
+    baselineCompleted: 0,
+    followupCompleted: 0,
+  });
 
   useEffect(() => {
     let mounted = true;
@@ -21,6 +25,10 @@ export function BaselineStatus() {
         if (!mounted) return;
         setBaselineCompleted(Boolean(data.baselineCompleted));
         setStatus(data.status || null);
+        setCounts({
+          baselineCompleted: data.counts?.baselineCompleted || 0,
+          followupCompleted: data.counts?.followupCompleted || 0,
+        });
       } catch (err) {
         // ignore
       } finally {
@@ -81,6 +89,9 @@ export function BaselineStatus() {
         {status && !baselineCompleted ? (
           <p className="text-xs text-slate-500">Current status: {status}</p>
         ) : null}
+        <p className="text-xs text-slate-500">
+          Completed baselines: <span className="font-semibold text-slate-900">{counts.baselineCompleted}</span>
+        </p>
       </Card>
       <Card className="space-y-4 p-5">
         <div className="flex items-center gap-2">
@@ -93,6 +104,9 @@ export function BaselineStatus() {
         <Button variant="outline" asChild>
           <Link href="/dashboard/student/assessments/start?type=followup">Start follow-up</Link>
         </Button>
+        <p className="text-xs text-slate-500">
+          Completed follow-ups: <span className="font-semibold text-slate-900">{counts.followupCompleted}</span>
+        </p>
       </Card>
     </div>
   );
