@@ -72,7 +72,7 @@ export async function startTest({
   return instance;
 }
 
-function buildPersonaText({
+export function buildPersonaText({
   score,
   studentId,
   studentProfile,
@@ -104,12 +104,22 @@ function buildPersonaText({
 
   const teacherNote = score.overallSummaryForTeacher || "Please review and add your own note.";
 
-  return [
+  const staffSummary = [
     `${name} (${grade}, ${section}, ${roll}) — Latest ${templateType.toLowerCase()} check-in.`,
     `Overall wellbeing risk looks ${overallRisk}.`,
     concerns ? `Main areas to watch: ${concerns}.` : "No specific risk areas stood out.",
     `Notes for staff: ${teacherNote}`,
   ].join("\n");
+
+  const studentFriendlySummary = [
+    `${name}, we are noticing how you're doing in school.`,
+    concerns
+      ? `We want to check in about: ${concerns}.`
+      : "Right now nothing urgent stands out, but we still want to hear how you feel.",
+    "Your feelings matter. If anything feels hard, you can talk to your teacher or counselor.",
+  ].join(" ");
+
+  return { staffSummary, studentFriendlySummary };
 }
 
 export async function submitTest({
@@ -178,7 +188,18 @@ export async function submitTest({
       },
       doc: {
         sourceId: test._id.toString(),
-        text: personaText,
+        text: personaText.staffSummary,
+      },
+    });
+    await upsertRAGDocument({
+      filter: {
+        schoolId: test.schoolId.toString(),
+        studentId: test.studentId.toString(),
+        type: "STUDENT_PERSONA_STUDENT_FRIENDLY",
+      },
+      doc: {
+        sourceId: test._id.toString(),
+        text: personaText.studentFriendlySummary,
       },
     });
   } catch (ragError) {
