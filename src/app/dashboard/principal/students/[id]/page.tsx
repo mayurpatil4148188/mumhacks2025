@@ -11,7 +11,6 @@ import { RAGDocument } from "@/models/RAGDocument";
 import mongoose from "mongoose";
 import { PersonaChatBox } from "@/components/chat/persona-chat-box";
 import { RegenPanel } from "./regen-panel";
-import { AssessmentList } from "./assessment-list";
 
 export default async function StudentDetailPage({ params }: { params: { id: string } }) {
   const session = await getAuthSession();
@@ -64,6 +63,7 @@ export default async function StudentDetailPage({ params }: { params: { id: stri
       description="Student overview, alerts, and persona summary."
       nav={principalNav}
     >
+      <RegenPanel studentId={studentId.toString()} onComplete={undefined} />
       <div className="grid gap-4 md:grid-cols-3">
         <Card className="p-4">
           <p className="text-sm text-slate-500">Grade / Section</p>
@@ -156,12 +156,6 @@ export default async function StudentDetailPage({ params }: { params: { id: stri
             })}
           </div>
         )}
-      </Card>
-
-      <RegenPanel studentId={studentId.toString()} onComplete={undefined} />
-      <Card className="space-y-3 p-4">
-        <h3 className="text-lg font-semibold text-slate-900">Assessment summaries</h3>
-        <AssessmentList studentId={studentId.toString()} />
       </Card>
 
       <PersonaChatBox
