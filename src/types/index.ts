@@ -31,7 +31,7 @@ export interface BaseDocument extends Document {
 export interface Question {
   id: string;
   text: string;
-  answerType: "LIKERT_1_5" | "MCQ";
+  answerType: "LIKERT_1_5" | "LIKERT_1_4" | "MCQ";
   domainTags: Domain[];
   isPersonalized?: boolean;
   weight?: number;
@@ -53,6 +53,8 @@ export interface StudentTestQuestion {
 }
 
 export interface AnswerOption {
-  label: string;
-  value: number;
+  key: string;
+  text: string;
+  riskLevel?: "None" | "Low" | "Mid" | "High";
+  score: number;
 }

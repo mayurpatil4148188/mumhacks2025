@@ -2,9 +2,9 @@ import { StudentTestInstanceDocument, AIScoringResult } from "@/models/StudentTe
 import { Domain, DomainScore } from "@/types";
 
 function mapLikertToRisk(value: number): 0 | 1 | 2 | 3 {
-  if (value >= 5) return 3;
-  if (value >= 4) return 2;
-  if (value >= 3) return 1;
+  if (value >= 3) return 3;
+  if (value >= 2) return 2;
+  if (value >= 1) return 1;
   return 0;
 }
 

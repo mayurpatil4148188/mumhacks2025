@@ -2,20 +2,33 @@ import { dbConnect } from "@/db/connection";
 import { generateQuestions } from "@/ai/questions";
 import { scoreTestResponses } from "@/ai/score";
 import { StudentProfile } from "@/models/StudentProfile";
-import { StudentTestInstance, AIScoringResult } from "@/models/StudentTestInstance";
+import { StudentTestInstance, AIScoringResult, AIScoringResultDocument } from "@/models/StudentTestInstance";
 import { decideAlerts } from "@/services/alert-engine";
 import { Alert } from "@/models/StudentTestInstance";
 import { indexRAGDocument } from "@/rag";
 import { User } from "@/models/User";
 import { TestTemplate } from "@/models/TestTemplate";
 
-const defaultLikertOptions = [
-  { label: "Never", value: 1 },
-  { label: "Rarely", value: 2 },
-  { label: "Sometimes", value: 3 },
-  { label: "Often", value: 4 },
-  { label: "Always", value: 5 },
+const defaultLikertOptions5 = [
+  { key: "a", text: "Never", score: 1 },
+  { key: "b", text: "Rarely", score: 2 },
+  { key: "c", text: "Sometimes", score: 3 },
+  { key: "d", text: "Often", score: 4 },
+  { key: "e", text: "Always", score: 5 },
 ];
+
+const defaultLikertOptions4 = [
+  { key: "a", text: "Not at all / Never", score: 0 },
+  { key: "b", text: "A little / Rarely", score: 1 },
+  { key: "c", text: "Some / Sometimes", score: 2 },
+  { key: "d", text: "A lot / Often", score: 3 },
+];
+
+function resolveOptionsForQuestion(q: any) {
+  if (q.options?.length) return q.options;
+  if (q.answerType === "LIKERT_1_4") return defaultLikertOptions4;
+  return defaultLikertOptions5;
+}
 
 export async function startTest({
   studentId,
@@ -52,11 +65,38 @@ export async function startTest({
       text: q.text,
       domainTags: q.domainTags,
       answerValue: undefined,
-      options: q.options?.length ? q.options : defaultLikertOptions,
+      options: resolveOptionsForQuestion(q),
     })),
   });
 
   return instance;
+}
+
+function buildPersonaText({
+  score,
+  studentId,
+}: {
+  score: AIScoringResultDocument;
+  studentId: string;
+}) {
+  const sorted = [...score.domainScores].sort((a, b) => b.riskLevel - a.riskLevel);
+  const topThree = sorted.slice(0, 3);
+  const concerns = topThree
+    .map((d) => `${d.domain} (risk ${d.riskLevel}): ${d.explanation}`)
+    .join("; ");
+
+  const overallRisk =
+    sorted.find((d) => d.riskLevel >= 3) ? "High"
+      : sorted.find((d) => d.riskLevel === 2) ? "Elevated"
+      : sorted.find((d) => d.riskLevel === 1) ? "Mild"
+      : "Low";
+
+  return [
+    `Student persona baseline | studentId: ${studentId}`,
+    `Overall risk: ${overallRisk}`,
+    `Top concerns: ${concerns || "None detected"}`,
+    `Teacher summary: ${score.overallSummaryForTeacher || "N/A"}`,
+  ].join("\n");
 }
 
 export async function submitTest({
@@ -97,6 +137,20 @@ export async function submitTest({
     sourceId: test._id.toString(),
     text: score.overallSummaryForTeacher || "Assessment summary",
   });
+
+  if (test.templateType === "BASELINE") {
+    const personaText = buildPersonaText({
+      score,
+      studentId: test.studentId.toString(),
+    });
+    await indexRAGDocument({
+      schoolId: test.schoolId.toString(),
+      studentId: test.studentId.toString(),
+      type: "STUDENT_PERSONA",
+      sourceId: test._id.toString(),
+      text: personaText,
+    });
+  }
 
   return { score, alertLevel, domainFlags };
 }

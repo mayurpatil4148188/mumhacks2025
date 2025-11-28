@@ -13,15 +13,23 @@ interface Question {
   id?: string;
   text: string;
   domainTags?: string[];
-  options?: { label: string; value: number }[];
+  options?: { key: string; text: string; riskLevel?: string; score: number }[];
+  answerType?: string;
 }
 
-const defaultLikertOptions = [
-  { label: "Never", value: 1 },
-  { label: "Rarely", value: 2 },
-  { label: "Sometimes", value: 3 },
-  { label: "Often", value: 4 },
-  { label: "Always", value: 5 },
+const defaultLikertOptions4 = [
+  { key: "a", text: "Not at all / Never", score: 0 },
+  { key: "b", text: "A little / Rarely", score: 1 },
+  { key: "c", text: "Some / Sometimes", score: 2 },
+  { key: "d", text: "A lot / Often", score: 3 },
+];
+
+const defaultLikertOptions5 = [
+  { key: "a", text: "Never", score: 1 },
+  { key: "b", text: "Rarely", score: 2 },
+  { key: "c", text: "Sometimes", score: 3 },
+  { key: "d", text: "Often", score: 4 },
+  { key: "e", text: "Always", score: 5 },
 ];
 
 export default function StartAssessmentPage() {
@@ -148,23 +156,35 @@ export default function StartAssessmentPage() {
             <p className="text-sm text-slate-600">No questions were loaded for this assessment.</p>
           ) : null}
           {questions.map((q, index) => {
-            const opts = q.options && q.options.length ? q.options : defaultLikertOptions;
+            const opts =
+              q.options && q.options.length
+                ? q.options
+                : q.answerType === "LIKERT_1_4"
+                  ? defaultLikertOptions4
+                  : defaultLikertOptions5;
             const key = q.questionId || q.id || String(index);
             return (
               <Card key={key} className="space-y-3 p-4">
                 <p className="text-sm font-semibold text-slate-900">{q.text}</p>
-                <div className="flex flex-wrap gap-2">
+                <div className="grid gap-2 sm:grid-cols-2">
                   {opts.map((opt) => {
-                    const active = answers[key] === opt.value;
+                    const active = answers[key] === opt.score;
                     return (
                       <Button
-                        key={opt.value}
+                        key={opt.key}
                         type="button"
                         variant={active ? "default" : "outline"}
-                        className="text-xs"
-                        onClick={() => setAnswers({ ...answers, [key]: opt.value })}
+                        className="justify-start text-left text-xs"
+                        onClick={() => setAnswers({ ...answers, [key]: opt.score })}
                       >
-                        {opt.label}
+                        <span>
+                          {opt.text}
+                          {opt.riskLevel ? (
+                            <span className="ml-1 text-[11px] uppercase text-emerald-700">
+                              ({opt.riskLevel})
+                            </span>
+                          ) : null}
+                        </span>
                       </Button>
                     );
                   })}

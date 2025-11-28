@@ -15,8 +15,10 @@ export interface StudentTestInstanceDocument extends BaseDocument {
 
 const answerOptionSchema = new Schema(
   {
-    label: String,
-    value: Number,
+    key: String,
+    text: String,
+    riskLevel: String,
+    score: Number,
   },
   { _id: false }
 );
