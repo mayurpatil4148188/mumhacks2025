@@ -10,6 +10,7 @@
     "lint": "next lint",
     "seed": "tsx scripts/seed.ts",
     "seed:baseline": "tsx scripts/seed-baseline-questions.ts",
+    "seed:followup": "tsx scripts/seed-followup-questions.ts",
     "flush": "tsx scripts/flush.ts",
     "flush:tests": "tsx scripts/flush-test-instances.ts"
   },
