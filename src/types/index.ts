@@ -35,6 +35,7 @@ export interface Question {
   domainTags: Domain[];
   isPersonalized?: boolean;
   weight?: number;
+  options?: AnswerOption[];
 }
 
 export interface DomainScore {
@@ -48,4 +49,10 @@ export interface StudentTestQuestion {
   text: string;
   domainTags: Domain[];
   answerValue?: number;
+  options?: AnswerOption[];
+}
+
+export interface AnswerOption {
+  label: string;
+  value: number;
 }

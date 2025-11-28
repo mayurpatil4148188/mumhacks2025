@@ -13,12 +13,21 @@ export interface StudentTestInstanceDocument extends BaseDocument {
   invalidatedAt?: Date;
 }
 
+const answerOptionSchema = new Schema(
+  {
+    label: String,
+    value: Number,
+  },
+  { _id: false }
+);
+
 const testQuestionSchema = new Schema<StudentTestQuestion>(
   {
     questionId: String,
     text: String,
     domainTags: [String],
     answerValue: Number,
+    options: [answerOptionSchema],
   },
   { _id: false }
 );

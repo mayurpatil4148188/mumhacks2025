@@ -7,6 +7,15 @@ import { decideAlerts } from "@/services/alert-engine";
 import { Alert } from "@/models/StudentTestInstance";
 import { indexRAGDocument } from "@/rag";
 import { User } from "@/models/User";
+import { TestTemplate } from "@/models/TestTemplate";
+
+const defaultLikertOptions = [
+  { label: "Never", value: 1 },
+  { label: "Rarely", value: 2 },
+  { label: "Sometimes", value: 3 },
+  { label: "Often", value: 4 },
+  { label: "Always", value: 5 },
+];
 
 export async function startTest({
   studentId,
@@ -21,8 +30,18 @@ export async function startTest({
   const studentProfile = await StudentProfile.findOne({ userId: studentId, schoolId });
   if (!studentProfile) throw new Error("Student profile not found");
 
-  const lastScore = await AIScoringResult.findOne({ studentId, schoolId }).sort({ createdAt: -1 });
-  const questions = await generateQuestions(type, studentProfile, lastScore);
+  let questions;
+  if (type === "BASELINE") {
+    // Prefer school-specific template, otherwise fall back to a global baseline template.
+    const template =
+      (await TestTemplate.findOne({ type: "BASELINE", schoolId })) ||
+      (await TestTemplate.findOne({ type: "BASELINE", schoolId: null }));
+    if (!template) throw new Error("Baseline template not configured");
+    questions = template.questions;
+  } else {
+    const lastScore = await AIScoringResult.findOne({ studentId, schoolId }).sort({ createdAt: -1 });
+    questions = await generateQuestions(type, studentProfile, lastScore);
+  }
 
   const instance = await StudentTestInstance.create({
     studentId,
@@ -33,6 +52,7 @@ export async function startTest({
       text: q.text,
       domainTags: q.domainTags,
       answerValue: undefined,
+      options: q.options?.length ? q.options : defaultLikertOptions,
     })),
   });
 

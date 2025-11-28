@@ -10,6 +10,14 @@ export interface TestTemplateDocument extends BaseDocument {
   schoolId?: mongoose.Types.ObjectId | null;
 }
 
+const answerOptionSchema = new Schema(
+  {
+    label: String,
+    value: Number,
+  },
+  { _id: false }
+);
+
 const questionSchema = new Schema<Question>(
   {
     id: String,
@@ -18,6 +26,7 @@ const questionSchema = new Schema<Question>(
     domainTags: [String],
     isPersonalized: { type: Boolean, default: false },
     weight: { type: Number, default: 1 },
+    options: [answerOptionSchema],
   },
   { _id: false }
 );

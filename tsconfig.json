@@ -33,14 +33,26 @@
       "@/lib/*": [
         "./src/lib/*"
       ],
+      "@/ai/*": [
+        "./src/ai/*"
+      ],
       "@/db/*": [
         "./src/db/*"
       ],
       "@/models/*": [
         "./src/models/*"
       ],
+      "@/services/*": [
+        "./src/services/*"
+      ],
       "@/types/*": [
         "./src/types/*"
+      ],
+      "@/rag": [
+        "./src/rag/index.ts"
+      ],
+      "@/rag/*": [
+        "./src/rag/*"
       ]
     },
     "plugins": [

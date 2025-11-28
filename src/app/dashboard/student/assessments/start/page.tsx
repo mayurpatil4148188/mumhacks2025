@@ -14,7 +14,16 @@ interface Question {
   id?: string;
   text: string;
   domainTags?: string[];
+  options?: { label: string; value: number }[];
 }
+
+const defaultLikertOptions = [
+  { label: "Never", value: 1 },
+  { label: "Rarely", value: 2 },
+  { label: "Sometimes", value: 3 },
+  { label: "Often", value: 4 },
+  { label: "Always", value: 5 },
+];
 
 export default function StartAssessmentPage() {
   const params = useSearchParams();
@@ -31,6 +40,7 @@ export default function StartAssessmentPage() {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
 
   useEffect(() => {
     if (status === "loading") return;
@@ -103,6 +113,14 @@ export default function StartAssessmentPage() {
 
   const title = type === "BASELINE" ? "Baseline check-in" : "Follow-up check-in";
 
+  useEffect(() => {
+    if (submitted) {
+      setRedirecting(true);
+      alert("Thanks for your answers! Taking you back to your dashboard.");
+      router.push("/dashboard/student");
+    }
+  }, [router, submitted]);
+
   return (
     <DashboardShell
       title={title}
@@ -111,31 +129,39 @@ export default function StartAssessmentPage() {
     >
       <div className="space-y-4">
         {error ? <p className="text-sm text-red-600">{error}</p> : null}
-        {submitted ? (
-          <Card className="p-4 text-sm text-emerald-700">
-            Thank you for submitting your responses. You can close this page now.
-          </Card>
+        {redirecting ? (
+          <Card className="p-4 text-sm text-emerald-700">Redirecting to your dashboard…</Card>
         ) : null}
         <div className="space-y-3">
           {isLoading ? <p className="text-sm text-slate-600">Loading questions…</p> : null}
           {!isLoading && questions.length === 0 ? (
             <p className="text-sm text-slate-600">No questions were loaded for this assessment.</p>
           ) : null}
-          {questions.map((q, index) => (
-            <Card key={q.questionId || q.id || index} className="p-4">
-              <p className="text-sm font-semibold text-slate-900">{q.text}</p>
-              <Input
-                type="number"
-                min={1}
-                max={5}
-                placeholder="1-5"
-                className="mt-2 w-32"
-                onChange={(e) =>
-                  setAnswers({ ...answers, [q.questionId || q.id || String(index)]: Number(e.target.value) })
-                }
-              />
-            </Card>
-          ))}
+          {questions.map((q, index) => {
+            const opts = q.options && q.options.length ? q.options : defaultLikertOptions;
+            const key = q.questionId || q.id || String(index);
+            return (
+              <Card key={key} className="space-y-3 p-4">
+                <p className="text-sm font-semibold text-slate-900">{q.text}</p>
+                <div className="flex flex-wrap gap-2">
+                  {opts.map((opt) => {
+                    const active = answers[key] === opt.value;
+                    return (
+                      <Button
+                        key={opt.value}
+                        type="button"
+                        variant={active ? "default" : "outline"}
+                        className="text-xs"
+                        onClick={() => setAnswers({ ...answers, [key]: opt.value })}
+                      >
+                        {opt.label}
+                      </Button>
+                    );
+                  })}
+                </div>
+              </Card>
+            );
+          })}
         </div>
         <Button onClick={submit} className="mt-4" disabled={isLoading || submitted}>
           Submit responses

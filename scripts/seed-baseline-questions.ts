@@ -68,6 +68,13 @@ const baselineQuestions = [
     answerType: "LIKERT_1_5",
     domainTags: ["Self-harm risk", "Social isolation"],
     weight: 1,
+    options: [
+      { label: "Never", value: 1 },
+      { label: "Rarely", value: 2 },
+      { label: "Sometimes", value: 3 },
+      { label: "Often", value: 4 },
+      { label: "Always", value: 5 },
+    ],
   },
 
   // Family stress (4 questions)
@@ -273,4 +280,3 @@ async function seedBaselineQuestions() {
 }
 
 seedBaselineQuestions();
-
