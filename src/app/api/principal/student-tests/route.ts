@@ -6,6 +6,12 @@ import { StudentTestInstance, AIScoringResult } from "@/models/StudentTestInstan
 import { StudentProfile } from "@/models/StudentProfile";
 import { User } from "@/models/User";
 import { RAGDocument } from "@/models/RAGDocument";
+import { isDummyMode } from "@/lib/env";
+import {
+  dummyStudent,
+  dummyStudentTests,
+  dummyPersona,
+} from "@/lib/dummy-data";
 
 export const GET = withErrorHandling(async (req: Request) => {
   const session = await requireRoleSession(["PRINCIPAL", "MASTER_ADMIN", "TEACHER"]);
@@ -14,6 +20,15 @@ export const GET = withErrorHandling(async (req: Request) => {
   const schoolId = session.user.schoolId;
   if (!studentId || !schoolId) {
     return NextResponse.json({ error: "Missing studentId or schoolId" }, { status: 400 });
+  }
+
+  if (isDummyMode()) {
+    return NextResponse.json({
+      student: dummyStudent,
+      persona: dummyPersona.staff,
+      personaStudentFriendly: dummyPersona.student,
+      tests: dummyStudentTests,
+    });
   }
 
   await dbConnect();

@@ -9,6 +9,8 @@ import { StudentProfile } from "@/models/StudentProfile";
 import { User } from "@/models/User";
 import { Alert, StudentTestInstance } from "@/models/StudentTestInstance";
 import { RAGDocument } from "@/models/RAGDocument";
+import { isDummyMode } from "@/lib/env";
+import { dummyStudents } from "@/lib/dummy-data";
 
 type StudentRow = {
   id: string;
@@ -26,52 +28,67 @@ export default async function PrincipalStudentsPage() {
   if (!session || !session.user.schoolId) {
     throw new Error("Unauthorized or school not found.");
   }
-  await dbConnect();
 
-  const schoolId = session.user.schoolId;
-  const profiles = await StudentProfile.find({ schoolId }).lean();
-  const userIds = profiles.map((p) => p.userId);
-  const users = await User.find({ _id: { $in: userIds } }).select("_id name").lean();
-  const userNameMap = new Map(users.map((u) => [u._id.toString(), u.name || "Student"]));
+  let rows: StudentRow[] = [];
 
-  const [baselineTests, followupCounts, alerts, personas] = await Promise.all([
-    StudentTestInstance.aggregate([
-      { $match: { schoolId, templateType: "BASELINE" } },
-      { $group: { _id: "$studentId", completed: { $max: { $eq: ["$status", "COMPLETED"] } } } },
-    ]),
-    StudentTestInstance.aggregate([
-      { $match: { schoolId, templateType: "FOLLOWUP", status: "COMPLETED" } },
-      { $group: { _id: "$studentId", count: { $sum: 1 } } },
-    ]),
-    Alert.aggregate([
-      { $match: { schoolId, status: "OPEN" } },
-      { $group: { _id: "$studentId", count: { $sum: 1 } } },
-    ]),
-    RAGDocument.find({ schoolId, type: "STUDENT_PERSONA", studentId: { $in: userIds } })
-      .select("studentId text")
-      .lean(),
-  ]);
+  if (isDummyMode()) {
+    rows = dummyStudents.map((s) => ({
+      id: s.id,
+      name: s.name,
+      grade: s.grade,
+      section: s.section,
+      baselineDone: s.baselineDone,
+      followupCount: s.followupCount,
+      alertCount: s.alertCount,
+      personaSnippet: s.personaSnippet || undefined,
+    }));
+  } else {
+    await dbConnect();
+    const schoolId = session.user.schoolId;
+    const profiles = await StudentProfile.find({ schoolId }).lean();
+    const userIds = profiles.map((p) => p.userId);
+    const users = await User.find({ _id: { $in: userIds } }).select("_id name").lean();
+    const userNameMap = new Map(users.map((u) => [u._id.toString(), u.name || "Student"]));
 
-  const baselineMap = new Map(baselineTests.map((b: any) => [b._id.toString(), Boolean(b.completed)]));
-  const followupMap = new Map(followupCounts.map((f: any) => [f._id.toString(), f.count || 0]));
-  const alertMap = new Map(alerts.map((a: any) => [a._id.toString(), a.count || 0]));
-  const personaMap = new Map(
-    personas.map((p: any) => [p.studentId.toString(), (p.text as string)?.slice(0, 160) || ""])
-  );
+    const [baselineTests, followupCounts, alerts, personas] = await Promise.all([
+      StudentTestInstance.aggregate([
+        { $match: { schoolId, templateType: "BASELINE" } },
+        { $group: { _id: "$studentId", completed: { $max: { $eq: ["$status", "COMPLETED"] } } } },
+      ]),
+      StudentTestInstance.aggregate([
+        { $match: { schoolId, templateType: "FOLLOWUP", status: "COMPLETED" } },
+        { $group: { _id: "$studentId", count: { $sum: 1 } } },
+      ]),
+      Alert.aggregate([
+        { $match: { schoolId, status: "OPEN" } },
+        { $group: { _id: "$studentId", count: { $sum: 1 } } },
+      ]),
+      RAGDocument.find({ schoolId, type: "STUDENT_PERSONA", studentId: { $in: userIds } })
+        .select("studentId text")
+        .lean(),
+    ]);
 
-  const rows: StudentRow[] = profiles.map((p) => {
-    const id = p.userId.toString();
-    return {
-      id,
-      name: userNameMap.get(id) || "Student",
-      grade: p.grade,
-      section: p.section,
-      baselineDone: baselineMap.get(id) || false,
-      followupCount: followupMap.get(id) || 0,
-      alertCount: alertMap.get(id) || 0,
-      personaSnippet: personaMap.get(id),
-    };
-  });
+    const baselineMap = new Map(baselineTests.map((b: any) => [b._id.toString(), Boolean(b.completed)]));
+    const followupMap = new Map(followupCounts.map((f: any) => [f._id.toString(), f.count || 0]));
+    const alertMap = new Map(alerts.map((a: any) => [a._id.toString(), a.count || 0]));
+    const personaMap = new Map(
+      personas.map((p: any) => [p.studentId.toString(), (p.text as string)?.slice(0, 160) || ""])
+    );
+
+    rows = profiles.map((p) => {
+      const id = p.userId.toString();
+      return {
+        id,
+        name: userNameMap.get(id) || "Student",
+        grade: p.grade,
+        section: p.section,
+        baselineDone: baselineMap.get(id) || false,
+        followupCount: followupMap.get(id) || 0,
+        alertCount: alertMap.get(id) || 0,
+        personaSnippet: personaMap.get(id),
+      };
+    });
+  }
 
   return (
     <DashboardShell

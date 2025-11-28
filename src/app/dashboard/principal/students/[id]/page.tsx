@@ -11,50 +11,80 @@ import { RAGDocument } from "@/models/RAGDocument";
 import mongoose from "mongoose";
 import { PersonaChatBox } from "@/components/chat/persona-chat-box";
 import { RegenPanel } from "./regen-panel";
+import { isDummyMode } from "@/lib/env";
+import {
+  dummyAlerts,
+  dummyPersona,
+  dummyStudentProfile,
+  dummyStudent,
+  dummyTests,
+  dummyLatestScore,
+} from "@/lib/dummy-data";
 
 export default async function StudentDetailPage({ params }: { params: { id: string } }) {
   const session = await getAuthSession();
   if (!session || !session.user.schoolId) {
     throw new Error("Unauthorized or school not found.");
   }
-  await dbConnect();
 
   const studentId = new mongoose.Types.ObjectId(params.id);
-  const profile = await StudentProfile.findOne({ userId: studentId, schoolId: session.user.schoolId }).lean();
-  if (!profile) {
-    throw new Error("Student not found for this school.");
+
+  let profile: any;
+  let user: any;
+  let openAlerts: any[] = [];
+  let latestScore: any;
+  let personaDoc: any;
+  let followupTests: any[] = [];
+
+  if (isDummyMode()) {
+    profile = dummyStudentProfile;
+    user = { name: dummyStudent.name, email: "student@dummy.school" };
+    openAlerts = dummyAlerts.filter((a) => a.studentId.toString() === params.id);
+    personaDoc = { text: dummyPersona.staff };
+    followupTests = dummyTests.filter((t) => t.templateType === "FOLLOWUP");
+    latestScore = dummyLatestScore;
+  } else {
+    await dbConnect();
+    profile = await StudentProfile.findOne({ userId: studentId, schoolId: session.user.schoolId }).lean();
+    if (!profile) {
+      throw new Error("Student not found for this school.");
+    }
+    user = await User.findById(studentId).select("name email").lean();
+    [openAlerts, latestScore, personaDoc, followupTests] = await Promise.all([
+      Alert.find({ studentId, schoolId: session.user.schoolId, status: "OPEN" }).lean(),
+      AIScoringResult.findOne({ studentId, schoolId: session.user.schoolId }).sort({ createdAt: -1 }).lean(),
+      RAGDocument.findOne({ studentId, schoolId: session.user.schoolId, type: "STUDENT_PERSONA" })
+        .sort({ updatedAt: -1 })
+        .lean(),
+      StudentTestInstance.find({
+        studentId,
+        schoolId: session.user.schoolId,
+        templateType: "FOLLOWUP",
+      })
+        .sort({ createdAt: -1 })
+        .limit(10)
+        .lean(),
+    ]);
   }
-  const user = await User.findById(studentId).select("name email").lean();
-  const [openAlerts, latestScore, personaDoc, followupTests] = await Promise.all([
-    Alert.find({ studentId, schoolId: session.user.schoolId, status: "OPEN" }).lean(),
-    AIScoringResult.findOne({ studentId, schoolId: session.user.schoolId }).sort({ createdAt: -1 }).lean(),
-    RAGDocument.findOne({ studentId, schoolId: session.user.schoolId, type: "STUDENT_PERSONA" })
-      .sort({ updatedAt: -1 })
-      .lean(),
-    StudentTestInstance.find({
-      studentId,
-      schoolId: session.user.schoolId,
-      templateType: "FOLLOWUP",
-    })
-      .sort({ createdAt: -1 })
-      .limit(10)
-      .lean(),
-  ]);
 
   const followupIds = followupTests.map((f) => f._id);
-  const followupScores = followupIds.length
-    ? await AIScoringResult.find({ testInstanceId: { $in: followupIds } }).lean()
-    : [];
+  const followupScores =
+    !isDummyMode() && followupIds.length
+      ? await AIScoringResult.find({ testInstanceId: { $in: followupIds } }).lean()
+      : [];
   const scoreMap = new Map(followupScores.map((s) => [s.testInstanceId.toString(), s]));
 
   const personaText = personaDoc?.text || "No persona summary yet.";
-  const studentFriendlyDoc = await RAGDocument.findOne({
-    studentId,
-    schoolId: session.user.schoolId,
-    type: "STUDENT_PERSONA_STUDENT_FRIENDLY",
-  })
-    .sort({ updatedAt: -1 })
-    .lean();
+  const studentFriendlyDoc =
+    isDummyMode()
+      ? { text: dummyPersona.student }
+      : await RAGDocument.findOne({
+          studentId,
+          schoolId: session.user.schoolId,
+          type: "STUDENT_PERSONA_STUDENT_FRIENDLY",
+        })
+          .sort({ updatedAt: -1 })
+          .lean();
   const studentFriendlyText = studentFriendlyDoc?.text || null;
 
   return (

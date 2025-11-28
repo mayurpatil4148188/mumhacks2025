@@ -6,6 +6,8 @@ import { dbConnect } from "@/db/connection";
 import { Alert, AIScoringResult, StudentTestInstance } from "@/models/StudentTestInstance";
 import { User } from "@/models/User";
 import { principalNav } from "./nav";
+import { isDummyMode } from "@/lib/env";
+import { dummyAlerts, dummyStudents } from "@/lib/dummy-data";
 
 type AlertRow = {
   id: string;
@@ -20,36 +22,60 @@ export default async function PrincipalDashboard() {
     throw new Error("Unauthorized or school not found.");
   }
 
-  await dbConnect();
+  let activeAlerts: any[] = [];
+  let avgRisk = 0;
+  let baselineCount = 0;
+  let followupCount = 0;
+  let alerts: AlertRow[] = [];
 
-  const schoolId = session.user.schoolId;
+  if (isDummyMode()) {
+    activeAlerts = dummyAlerts.slice(0, 10);
+    avgRisk = 1.67; // Average of risk levels 1, 2, 3
+    baselineCount = dummyStudents.filter((s) => s.baselineDone).length;
+    followupCount = dummyStudents.reduce((sum, s) => sum + s.followupCount, 0);
+    const studentNameMap = new Map(dummyStudents.map((s) => [s.id, s.name]));
+    alerts = activeAlerts.map((a: any) => ({
+      id: a._id.toString(),
+      student: studentNameMap.get(a.studentId?.toString() || "") || "Student",
+      domain: (a.domainFlags && a.domainFlags[0]?.domain) || "N/A",
+      level: (a.domainFlags && a.domainFlags[0]?.alertLevel) || a.status || "OPEN",
+    }));
+  } else {
+    await dbConnect();
+    const schoolId = session.user.schoolId;
 
-  const [activeAlerts, avgRisk, baselineCount, followupCount] = await Promise.all([
-    Alert.find({ schoolId, status: "OPEN" }).sort({ createdAt: -1 }).limit(10).lean(),
-    (async () => {
-      const results = await AIScoringResult.find({ schoolId }).sort({ createdAt: -1 }).limit(25).lean();
-      const scores = results.flatMap((r) => r.domainScores?.map((d) => d.riskLevel) || []);
-      if (!scores.length) return 0;
-      return Number((scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(2));
-    })(),
-    StudentTestInstance.countDocuments({ schoolId, templateType: "BASELINE", status: "COMPLETED" }),
-    StudentTestInstance.countDocuments({ schoolId, templateType: "FOLLOWUP", status: "COMPLETED" }),
-  ]);
+    const [fetchedAlerts, calculatedAvgRisk, baseline, followup] = await Promise.all([
+      Alert.find({ schoolId, status: "OPEN" }).sort({ createdAt: -1 }).limit(10).lean(),
+      (async () => {
+        const results = await AIScoringResult.find({ schoolId }).sort({ createdAt: -1 }).limit(25).lean();
+        const scores = results.flatMap((r) => r.domainScores?.map((d) => d.riskLevel) || []);
+        if (!scores.length) return 0;
+        return Number((scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(2));
+      })(),
+      StudentTestInstance.countDocuments({ schoolId, templateType: "BASELINE", status: "COMPLETED" }),
+      StudentTestInstance.countDocuments({ schoolId, templateType: "FOLLOWUP", status: "COMPLETED" }),
+    ]);
 
-  const studentIds = Array.from(new Set(activeAlerts.map((a) => a.studentId?.toString()).filter(Boolean)));
-  const students = studentIds.length
-    ? await User.find({ _id: { $in: studentIds } })
-        .select("_id name")
-        .lean()
-    : [];
-  const studentNameMap = new Map(students.map((s) => [s._id.toString(), s.name || "Student"]));
+    activeAlerts = fetchedAlerts;
+    avgRisk = calculatedAvgRisk;
+    baselineCount = baseline;
+    followupCount = followup;
 
-  const alerts: AlertRow[] = activeAlerts.map((a: any) => ({
-    id: a._id.toString(),
-    student: studentNameMap.get(a.studentId?.toString() || "") || "Student",
-    domain: (a.domainFlags && a.domainFlags[0]?.domain) || "N/A",
-    level: (a.domainFlags && a.domainFlags[0]?.alertLevel) || a.status || "OPEN",
-  }));
+    const studentIds = Array.from(new Set(activeAlerts.map((a) => a.studentId?.toString()).filter(Boolean)));
+    const students = studentIds.length
+      ? await User.find({ _id: { $in: studentIds } })
+          .select("_id name")
+          .lean()
+      : [];
+    const studentNameMap = new Map(students.map((s) => [s._id.toString(), s.name || "Student"]));
+
+    alerts = activeAlerts.map((a: any) => ({
+      id: a._id.toString(),
+      student: studentNameMap.get(a.studentId?.toString() || "") || "Student",
+      domain: (a.domainFlags && a.domainFlags[0]?.domain) || "N/A",
+      level: (a.domainFlags && a.domainFlags[0]?.alertLevel) || a.status || "OPEN",
+    }));
+  }
 
   return (
     <DashboardShell
