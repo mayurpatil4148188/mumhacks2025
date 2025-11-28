@@ -88,21 +88,27 @@ function buildPersonaText({
   const sorted = [...score.domainScores].sort((a, b) => b.riskLevel - a.riskLevel);
   const topThree = sorted.slice(0, 3);
   const concerns = topThree
-    .map((d) => `${d.domain} (risk ${d.riskLevel}): ${d.explanation}`)
-    .join("; ");
+    .map((d) => `${d.domain} (level ${d.riskLevel}/3) — ${d.explanation}`)
+    .join(" • ");
 
   const overallRisk =
-    sorted.find((d) => d.riskLevel >= 3) ? "High"
-      : sorted.find((d) => d.riskLevel === 2) ? "Elevated"
-      : sorted.find((d) => d.riskLevel === 1) ? "Mild"
-      : "Low";
+    sorted.find((d) => d.riskLevel >= 3) ? "high"
+      : sorted.find((d) => d.riskLevel === 2) ? "elevated"
+      : sorted.find((d) => d.riskLevel === 1) ? "mild"
+      : "low";
+
+  const name = user?.name || "Student";
+  const grade = studentProfile?.grade ? `Grade ${studentProfile.grade}` : "Grade N/A";
+  const section = studentProfile?.section ? `Section ${studentProfile.section}` : "Section N/A";
+  const roll = studentProfile?.rollNumber ? `Roll ${studentProfile.rollNumber}` : "Roll N/A";
+
+  const teacherNote = score.overallSummaryForTeacher || "Please review and add your own note.";
 
   return [
-    `Student persona | latest=${templateType} | studentId: ${studentId}`,
-    `Name: ${user?.name || "N/A"} | Grade: ${studentProfile?.grade || "N/A"} | Section: ${studentProfile?.section || "N/A"} | Roll: ${studentProfile?.rollNumber || "N/A"}`,
-    `Overall risk: ${overallRisk}`,
-    `Top concerns: ${concerns || "None detected"}`,
-    `Teacher summary: ${score.overallSummaryForTeacher || "N/A"}`,
+    `${name} (${grade}, ${section}, ${roll}) — Latest ${templateType.toLowerCase()} check-in.`,
+    `Overall wellbeing risk looks ${overallRisk}.`,
+    concerns ? `Main areas to watch: ${concerns}.` : "No specific risk areas stood out.",
+    `Notes for staff: ${teacherNote}`,
   ].join("\n");
 }
 
