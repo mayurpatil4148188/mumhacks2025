@@ -7,6 +7,7 @@ import { Sparkles, Star, Smile, Sun, Heart, Rainbow, Trophy } from "lucide-react
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { cn } from "@/lib/utils";
 import { studentNav } from "../../nav";
 
 interface Question {
@@ -231,21 +232,21 @@ export default function StartAssessmentPage() {
                       key={opt.key}
                       type="button"
                       variant={active ? "default" : "outline"}
-                      className="justify-start text-left text-sm py-3 rounded-xl border border-emerald-100 bg-white/80 hover:border-emerald-300 hover:bg-emerald-50"
+                      className={cn(
+                        "justify-start text-left text-sm py-3 rounded-xl border transition-colors",
+                        active
+                          ? "border-emerald-300 bg-emerald-100 text-emerald-900 shadow-sm hover:bg-emerald-200"
+                          : "border-emerald-100 bg-emerald-50/40 text-slate-800 hover:border-emerald-300 hover:bg-emerald-50"
+                      )}
                       onClick={() => setAnswers({ ...answers, [key]: opt.score })}
                     >
-                      <span className="flex items-center gap-2">
-                        {active ? <Heart className="h-4 w-4 text-rose-500" /> : <Sparkles className="h-4 w-4 text-emerald-400" />}
-                        {opt.text}
-                        {opt.riskLevel ? (
-                          <span className="ml-1 text-[11px] uppercase text-emerald-700">
-                            ({opt.riskLevel})
-                          </span>
-                        ) : null}
-                      </span>
-                    </Button>
-                  );
-                })}
+                        <span className="flex items-center gap-2">
+                          {active ? <Heart className="h-4 w-4 text-rose-500" /> : <Sparkles className="h-4 w-4 text-emerald-400" />}
+                          {opt.text}
+                        </span>
+                      </Button>
+                    );
+                  })}
               </div>
               <div className="flex items-center justify-between pt-2">
                 <Button

@@ -137,38 +137,43 @@ export async function submitTest({
     });
   }
 
-  await upsertRAGDocument({
-    filter: {
-      schoolId: test.schoolId.toString(),
-      studentId: test.studentId.toString(),
-      type: "ASSESSMENT_SUMMARY",
-    },
-    doc: {
-      sourceId: test._id.toString(),
-      text: score.overallSummaryForTeacher || "Assessment summary",
-    },
-  });
+  // RAG indexing should not block submission; log and continue on failure.
+  try {
+    await upsertRAGDocument({
+      filter: {
+        schoolId: test.schoolId.toString(),
+        studentId: test.studentId.toString(),
+        type: "ASSESSMENT_SUMMARY",
+      },
+      doc: {
+        sourceId: test._id.toString(),
+        text: score.overallSummaryForTeacher || "Assessment summary",
+      },
+    });
 
-  const studentProfile = await StudentProfile.findOne({ userId: test.studentId, schoolId: test.schoolId });
-  const user = await User.findById(test.studentId);
-  const personaText = buildPersonaText({
-    score,
-    studentId: test.studentId.toString(),
-    studentProfile,
-    user,
-    templateType: test.templateType,
-  });
-  await upsertRAGDocument({
-    filter: {
-      schoolId: test.schoolId.toString(),
+    const studentProfile = await StudentProfile.findOne({ userId: test.studentId, schoolId: test.schoolId });
+    const user = await User.findById(test.studentId);
+    const personaText = buildPersonaText({
+      score,
       studentId: test.studentId.toString(),
-      type: "STUDENT_PERSONA",
-    },
-    doc: {
-      sourceId: test._id.toString(),
-      text: personaText,
-    },
-  });
+      studentProfile,
+      user,
+      templateType: test.templateType,
+    });
+    await upsertRAGDocument({
+      filter: {
+        schoolId: test.schoolId.toString(),
+        studentId: test.studentId.toString(),
+        type: "STUDENT_PERSONA",
+      },
+      doc: {
+        sourceId: test._id.toString(),
+        text: personaText,
+      },
+    });
+  } catch (ragError) {
+    console.warn("RAG indexing skipped:", (ragError as Error)?.message);
+  }
 
   return { score, alertLevel, domainFlags };
 }

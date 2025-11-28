@@ -31,7 +31,8 @@ export const submitTestSchema = z.object({
   answers: z.array(
     z.object({
       questionId: z.string(),
-      answerValue: z.number().min(1).max(5),
+      // Accept both 0–3 (LIKERT_1_4) and 1–5 (LIKERT_1_5) scales
+      answerValue: z.number().min(0).max(5),
     })
   ),
 });
