@@ -42,13 +42,16 @@ export async function startTest({
 export async function submitTest({
   testInstanceId,
   answers,
+  studentId,
 }: {
   testInstanceId: string;
   answers: { questionId: string; answerValue: number }[];
+  studentId: string;
 }) {
   await dbConnect();
   const test = await StudentTestInstance.findById(testInstanceId);
   if (!test) throw new Error("Test not found");
+  if (test.studentId.toString() !== studentId) throw new Error("You cannot submit this assessment.");
   test.questions = test.questions.map((q) => {
     const answer = answers.find((a) => a.questionId === q.questionId);
     return { ...q.toObject(), answerValue: answer?.answerValue };
