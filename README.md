@@ -36,34 +36,6 @@ It provides **safe, neutral, non-diagnostic assessments**, converts results into
 👉 Empower teachers and counselors  
 👉 Keep students safe, understood, and supported
 
-### 🚀 Live Demo
-
-Experience MITR in action! Try our live demo:
-
-**🌐 Demo URL:** [https://demo.mitr.app](https://demo.mitr.app) *(or your actual demo subdomain)*
-
-The demo environment includes:
-- Pre-populated dummy data for testing
-- Full access to all user roles (Student, Teacher, Principal, Parent)
-- Interactive analytics and charts
-- Complete assessment flow demonstration
-
-**Demo Credentials:**
-- **Principal:** `principal@dummy.school` / `welcome123`
-- **Student:** `student@dummy.school` / `welcome123`
-- **Teacher:** `teacher@dummy.school` / `welcome123`
-
-### 📹 Demo Video
-
-Watch our comprehensive demo video to see MITR in action:
-
-<div align="center">
-
-[![MITR Demo Video](https://img.youtube.com/vi/YOUR_VIDEO_ID/0.jpg)](https://www.youtube.com/watch?v=YOUR_VIDEO_ID)
-
-*Click the image above to watch the full demo video*
-
-</div>
 
 **Video Highlights:**
 - Complete user journey walkthrough
