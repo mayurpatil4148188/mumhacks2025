@@ -726,7 +726,12 @@ All with **OpenAI as the exclusive intelligence engine.**
 
 ## Contributors
 
-[Add contributor information here]
+We are grateful to our amazing team of contributors who made MITR possible:
+
+- [Hashmi Haris](https://www.linkedin.com/in/hashmiharis/)
+- [Fahad Shah](https://www.linkedin.com/in/1fahadshah/)
+- [Dev Bwoy](https://www.linkedin.com/in/devbwoy/)
+- [Yayesh Ahmed](https://www.linkedin.com/in/yayeshahmed/)
 
 ---
 
