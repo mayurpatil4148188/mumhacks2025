@@ -37,13 +37,6 @@ It provides **safe, neutral, non-diagnostic assessments**, converts results into
 👉 Keep students safe, understood, and supported
 
 
-**Video Highlights:**
-- Complete user journey walkthrough
-- Assessment flow demonstration
-- AI-powered insights and analytics
-- Multi-role dashboard showcase
-- Real-time alert system
-
 ---
 
 ## 2. Core Domains of Assessment
