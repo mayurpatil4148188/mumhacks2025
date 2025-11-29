@@ -1135,3 +1135,54 @@ export function getDummyChatResponse(message: string): string {
   }
   return dummyChatResponses.default;
 }
+
+// Analytics data for principal dashboard
+export const dummyAnalytics = {
+  // Domain distribution (count of alerts by domain)
+  domainDistribution: [
+    { domain: "Bullying", count: 1, percentage: 33.3 },
+    { domain: "Social isolation", count: 1, percentage: 33.3 },
+    { domain: "Academic pressure", count: 1, percentage: 33.3 },
+  ],
+  // Risk trend over last 7 days
+  riskTrend: [
+    { date: "2024-12-08", avgRisk: 1.2 },
+    { date: "2024-12-09", avgRisk: 1.4 },
+    { date: "2024-12-10", avgRisk: 1.5 },
+    { date: "2024-12-11", avgRisk: 1.6 },
+    { date: "2024-12-12", avgRisk: 1.65 },
+    { date: "2024-12-13", avgRisk: 1.67 },
+    { date: "2024-12-14", avgRisk: 1.67 },
+  ],
+  // Grade-wise risk distribution
+  gradeWiseRisk: [
+    { grade: "Grade 6", avgRisk: 1.5, studentCount: 2, alerts: 2 },
+    { grade: "Grade 7", avgRisk: 3.0, studentCount: 1, alerts: 1 },
+  ],
+  // Alert level breakdown
+  alertLevelBreakdown: [
+    { level: "RED", count: 1, percentage: 33.3 },
+    { level: "YELLOW", count: 2, percentage: 66.7 },
+  ],
+  // Assessment completion trends (last 30 days)
+  assessmentTrends: [
+    { date: "2024-11-15", baseline: 0, followup: 0 },
+    { date: "2024-11-22", baseline: 1, followup: 0 },
+    { date: "2024-11-29", baseline: 2, followup: 1 },
+    { date: "2024-12-06", baseline: 2, followup: 2 },
+    { date: "2024-12-13", baseline: 2, followup: 3 },
+  ],
+  // Section-wise statistics
+  sectionWiseStats: [
+    { section: "6A", students: 1, baselineCompleted: 1, followups: 2, alerts: 2 },
+    { section: "6B", students: 1, baselineCompleted: 1, followups: 1, alerts: 0 },
+    { section: "7A", students: 1, baselineCompleted: 0, followups: 0, alerts: 1 },
+  ],
+  // Risk level distribution
+  riskLevelDistribution: [
+    { level: 0, count: 0, label: "None" },
+    { level: 1, count: 1, label: "Low" },
+    { level: 2, count: 1, label: "Medium" },
+    { level: 3, count: 1, label: "High" },
+  ],
+};

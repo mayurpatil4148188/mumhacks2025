@@ -7,7 +7,13 @@ import { Alert, AIScoringResult, StudentTestInstance } from "@/models/StudentTes
 import { User } from "@/models/User";
 import { principalNav } from "./nav";
 import { isDummyMode } from "@/lib/env";
-import { dummyAlerts, dummyStudents } from "@/lib/dummy-data";
+import { dummyAlerts, dummyStudents, dummyAnalytics } from "@/lib/dummy-data";
+import { DomainDistributionChart } from "@/components/charts/domain-distribution-chart";
+import { RiskTrendChart } from "@/components/charts/risk-trend-chart";
+import { GradeRiskChart } from "@/components/charts/grade-risk-chart";
+import { AlertLevelChart } from "@/components/charts/alert-level-chart";
+import { AssessmentTrendChart } from "@/components/charts/assessment-trend-chart";
+import { SectionStatsChart } from "@/components/charts/section-stats-chart";
 
 type AlertRow = {
   id: string;
@@ -27,6 +33,7 @@ export default async function PrincipalDashboard() {
   let baselineCount = 0;
   let followupCount = 0;
   let alerts: AlertRow[] = [];
+  let analytics: any = null;
 
   if (isDummyMode()) {
     activeAlerts = dummyAlerts.slice(0, 10);
@@ -40,6 +47,7 @@ export default async function PrincipalDashboard() {
       domain: (a.domainFlags && a.domainFlags[0]?.domain) || "N/A",
       level: (a.domainFlags && a.domainFlags[0]?.alertLevel) || a.status || "OPEN",
     }));
+    analytics = dummyAnalytics;
   } else {
     await dbConnect();
     const schoolId = session.user.schoolId;
@@ -75,6 +83,8 @@ export default async function PrincipalDashboard() {
       domain: (a.domainFlags && a.domainFlags[0]?.domain) || "N/A",
       level: (a.domainFlags && a.domainFlags[0]?.alertLevel) || a.status || "OPEN",
     }));
+    // For non-dummy mode, calculate analytics from real data
+    analytics = null; // TODO: Calculate from real data
   }
 
   return (
@@ -101,6 +111,36 @@ export default async function PrincipalDashboard() {
           <p className="text-3xl font-bold">{followupCount}</p>
         </Card>
       </div>
+
+      {/* Analytics Charts - Only visible in dummy mode */}
+      {isDummyMode() && analytics && (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <Card className="p-4">
+            <h3 className="mb-4 text-sm font-semibold text-slate-900">Domain Distribution</h3>
+            <DomainDistributionChart data={analytics.domainDistribution} />
+          </Card>
+          <Card className="p-4">
+            <h3 className="mb-4 text-sm font-semibold text-slate-900">Risk Trend (7 days)</h3>
+            <RiskTrendChart data={analytics.riskTrend} />
+          </Card>
+          <Card className="p-4">
+            <h3 className="mb-4 text-sm font-semibold text-slate-900">Grade-wise Risk</h3>
+            <GradeRiskChart data={analytics.gradeWiseRisk} />
+          </Card>
+          <Card className="p-4">
+            <h3 className="mb-4 text-sm font-semibold text-slate-900">Alert Level Breakdown</h3>
+            <AlertLevelChart data={analytics.alertLevelBreakdown} />
+          </Card>
+          <Card className="p-4">
+            <h3 className="mb-4 text-sm font-semibold text-slate-900">Assessment Trends</h3>
+            <AssessmentTrendChart data={analytics.assessmentTrends} />
+          </Card>
+          <Card className="p-4">
+            <h3 className="mb-4 text-sm font-semibold text-slate-900">Section Statistics</h3>
+            <SectionStatsChart data={analytics.sectionWiseStats} />
+          </Card>
+        </div>
+      )}
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold text-slate-900">Open alerts</h2>
