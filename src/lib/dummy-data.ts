@@ -1186,3 +1186,84 @@ export const dummyAnalytics = {
     { level: 3, count: 1, label: "High" },
   ],
 };
+
+// Staff data for principal dashboard
+export const dummyStaff = [
+  {
+    id: "staff-1",
+    name: "Ms. Priya Desai",
+    email: "priya.desai@dummy.school",
+    role: "TEACHER",
+    assignedClasses: ["6A", "6B"],
+    studentsCount: 2,
+    alertsHandled: 1,
+    lastActive: new Date("2024-12-13"),
+  },
+  {
+    id: "staff-2",
+    name: "Mr. Rajesh Kumar",
+    email: "rajesh.kumar@dummy.school",
+    role: "TEACHER",
+    assignedClasses: ["7A"],
+    studentsCount: 1,
+    alertsHandled: 0,
+    lastActive: new Date("2024-12-12"),
+  },
+  {
+    id: "staff-3",
+    name: "Dr. Anjali Mehta",
+    email: "anjali.mehta@dummy.school",
+    role: "COUNSELOR",
+    assignedClasses: [],
+    studentsCount: 3,
+    alertsHandled: 2,
+    lastActive: new Date("2024-12-14"),
+  },
+];
+
+// Classes data for principal dashboard
+export const dummyClasses = [
+  {
+    id: "class-6a",
+    grade: "6",
+    section: "A",
+    teacher: "Ms. Priya Desai",
+    studentCount: 1,
+    baselineCompleted: 1,
+    followupsCompleted: 2,
+    activeAlerts: 2,
+    avgRisk: 1.5,
+    domainBreakdown: [
+      { domain: "Bullying", count: 1, avgRisk: 1.0 },
+      { domain: "Social isolation", count: 1, avgRisk: 2.0 },
+    ],
+  },
+  {
+    id: "class-6b",
+    grade: "6",
+    section: "B",
+    teacher: "Ms. Priya Desai",
+    studentCount: 1,
+    baselineCompleted: 1,
+    followupsCompleted: 1,
+    activeAlerts: 0,
+    avgRisk: 0.5,
+    domainBreakdown: [
+      { domain: "Academic pressure", count: 0, avgRisk: 0.5 },
+    ],
+  },
+  {
+    id: "class-7a",
+    grade: "7",
+    section: "A",
+    teacher: "Mr. Rajesh Kumar",
+    studentCount: 1,
+    baselineCompleted: 0,
+    followupsCompleted: 0,
+    activeAlerts: 1,
+    avgRisk: 3.0,
+    domainBreakdown: [
+      { domain: "Academic pressure", count: 1, avgRisk: 3.0 },
+    ],
+  },
+];
